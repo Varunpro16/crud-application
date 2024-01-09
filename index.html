@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Retrieval</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Documents</h1>
+  <table id="myTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Password</th>
+            <th>Option1</th>
+            <th>Option2</th>
+            <!-- Add more headers based on your object properties -->
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Existing rows if any -->
+    </tbody>
+</table>
+<div class="edit-container">
+  <input type="text" id="input1" value="Default Value 1">
+  <br>
+  <input type="text" id="input2" value="Default Value 2">
+  <br>
+  <input type="text" id="input3" value="Default Value 3">
+  <br>
+  <button onclick="SubmitClicked()">Submit</button>
+</div>
+
+  <script>
+    var ediRequestId;
+    const SubmitClicked = async () => {
+      console.log("editREquestId: ",ediRequestId);
+      const updatedUser = {
+        name:document.querySelector('#input1').value,
+        email:document.querySelector('#input2').value,
+        password:document.querySelector('#input3').value
+      }
+      console.log(updatedUser);
+      const res = await fetch(`http://localhost:3000/users/659d41bb31c4c4a9682ff903`,{
+        method:"POST",
+        headers:{
+          'Content-Type': 'application/json'
+        },
+        body:JSON.stringify(updatedUser)
+      })
+      .then((r) => r.json())
+      .then((data) => {
+        if(data.message !== "updated success"){
+          alert('Not Updated')
+        }
+        document.querySelector('.edit-container').style.display="none"
+        getDocuments()
+      })
+      console.log("end of fetch edit");
+    }
+    const editButtonClicked = async(id) => {
+      ediRequestId = id
+      document.querySelector('.edit-container').style.display="block"
+      document.querySelector('#myTable tbody').innerHTML=''
+      document.querySelector('#myTable thead').innerHTML=''
+      fetch(`http://localhost:3000/users/${id}`,{
+        method:"GET",
+        headers:{
+          'Content-Type':'application/json'
+        }
+      }).then((res) => res.json())
+        .then((data) => {
+          const user = data.user;
+          document.querySelector('#input1').value=user.name;
+          document.querySelector('#input2').value=user.email;
+          document.querySelector('#input3').value=user.password;
+        })
+    }
+  
+    const deleteButtonClicked = async(id) => {
+      console.log(id);
+      fetch(`http://localhost:3000/users/${id}`,{
+        method:"DELETE",
+        headers:{
+          'Content-Type': 'application/json'
+        },
+        body:JSON.stringify({
+          id:id
+        })
+      }).then(response => response.json())
+        .then((data) => {
+          if(data.message !== "deleted"){
+            alert("error in deleting the document")
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      
+        document.querySelector("#myTable tbody").innerHTML=''
+        getDocuments()
+    }
+    async function getDocuments() {
+      let data;
+      try{
+        const response = await fetch(`http://localhost:3000/`)
+        data = await response.json()
+      }catch(err){
+        console.log(err);
+      }
+      
+      // await fetch(`http://localhost:3000/`)
+      // .then((res)=>data=res.data)
+      // .then((d)=>{
+      //   data=d
+      // })
+        var tableBody = document.querySelector("#myTable tbody");
+
+        // Loop through the array of objects
+        data.forEach(function(obj) {
+            // Create a new row
+            var row = tableBody.insertRow();
+
+            // Add cells with object properties
+            var cell1 = row.insertCell(0);
+            cell1.textContent = obj.name;
+
+            var cell2 = row.insertCell(1);
+            cell2.textContent = obj.email;
+
+            var cell2 = row.insertCell(2);
+            cell2.textContent = obj.password;
+
+            var cell3 = row.insertCell(3);
+            var editButton = document.createElement("button")
+            editButton.textContent="Edit"
+            cell3.appendChild(editButton)
+            editButton.addEventListener("click",()=>{
+              editButtonClicked(obj._id)
+            })
+
+            var cell4 = row.insertCell(4);
+            var deleteButton = document.createElement("button")
+            deleteButton.textContent="Delete"
+            cell4.appendChild(deleteButton)
+            deleteButton.addEventListener("click",()=>{
+              deleteButtonClicked(obj._id)
+            })
+
+
+            // Add more cells based on your object properties
+        });
+
+
+
+      // data.forEach(doc => {
+      //   const listItem = document.createElement('li');
+      //   listItem.textContent = `Property1: ${doc.name}, Property2: ${doc.email}, Property3: ${doc.password}`;
+      //   documentList.appendChild(listItem);
+      // });
+    }
+
+    getDocuments();
+  </script>
+</body>
+</html>
